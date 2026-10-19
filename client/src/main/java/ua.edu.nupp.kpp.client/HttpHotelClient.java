@@ -49,7 +49,7 @@ public class HttpHotelClient {
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(form.toString()))
                 .build();
-//HEllo
+
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) {
             throw new RuntimeException("Помилка сервера: " + response.body());
