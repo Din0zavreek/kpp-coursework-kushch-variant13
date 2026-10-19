@@ -1,13 +1,26 @@
 package ua.edu.nupp.kpp.server.Service;
 
+import ua.edu.nupp.kpp.server.Models.Request;
+import java.util.List;
+
 public class RiskCalculator {
 
-    public static double calculate(double f1, double f2, double f3) {
+    public static double calculate(double factor1, double factor2, double factor3) {
+        if (factor1 < 0 || factor1 > 100 || factor2 < 0 || factor2 > 100 || factor3 < 0 || factor3 > 100) {
+            throw new IllegalArgumentException("Invalid factor value");
+        }
+        return (factor1 + factor2 + factor3) / 3.0;
+    }
 
-        if (f1 < 0 || f1 > 100 || f2 < 0 || f2 > 100 || f3 < 0 || f3 > 100) {
-            throw new IllegalArgumentException("Фактори F1, F2 та F3 мають бути в діапазоні від 0 до 100");
+    public double calculateOverallRisk(List<Request> requests) {
+        if (requests == null || requests.isEmpty()) {
+            return 0.0;
         }
 
-        return 0.40 * f1 + 0.35 * f2 + 0.25 * f3;
+        long unresolvedCount = requests.stream()
+                .filter(r -> "НОВА".equalsIgnoreCase(r.getState()) || "В_РОБОТІ".equalsIgnoreCase(r.getState()))
+                .count();
+
+        return (double) unresolvedCount / requests.size() * 100.0;
     }
 }

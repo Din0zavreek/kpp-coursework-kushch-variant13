@@ -2,57 +2,229 @@ package ua.edu.nupp.kpp.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class HttpHotelClient {
-
     private static final String BASE_URL = "http://localhost:8080/server";
-    private final HttpClient client = HttpClient.newHttpClient();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public List<Room> getRooms() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/rooms"))
-                .GET().build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return Arrays.asList(mapper.readValue(response.body(), Room[].class));
-    }
+    // ================= ROOMS (Номери) =================
 
-    public void addRoom(Room room) throws Exception {
-        Map<String, String> data = Map.of(
-                "roomNumber", room.getRoomNumber(),
-                "category", room.getCategory(),
-                "floor", String.valueOf(room.getFloor())
-        );
-        post("/rooms", data);
-    }
+    public List<Room> getRooms() {
+        List<Room> rooms = new ArrayList<>();
+        try {
+            URL url = new URL(BASE_URL + "/rooms");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
 
-    private void post(String endpoint, Map<String, String> params) throws Exception {
-        StringBuilder form = new StringBuilder();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            if (form.length() > 0) form.append("&");
-            form.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8))
-                    .append("=")
-                    .append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                Room[] array = mapper.readValue(reader, Room[].class);
+                rooms = Arrays.asList(array);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return rooms;
+    }
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + endpoint))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(form.toString()))
-                .build();
+    public void addRoom(Room room) {
+        try {
+            URL url = new URL(BASE_URL + "/rooms");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("Помилка сервера: " + response.body());
+            String params = (room.getId() != null ? "id=" + room.getId() + "&" : "") +
+                    "roomNumber=" + java.net.URLEncoder.encode(room.getRoomNumber(), StandardCharsets.UTF_8) +
+                    "&category=" + java.net.URLEncoder.encode(room.getCategory(), StandardCharsets.UTF_8) +
+                    "&floor=" + room.getFloor();
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(params.getBytes(StandardCharsets.UTF_8));
+            }
+            conn.getResponseCode();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteRoom(Long id) {
+        try {
+            URL url = new URL(BASE_URL + "/rooms?action=delete&id=" + id);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.getResponseCode();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    // ================= SPECIALISTS (Спеціалісти) =================
+
+    public List<Specialist> getSpecialists() {
+        List<Specialist> specialists = new ArrayList<>();
+        try {
+            URL url = new URL(BASE_URL + "/specialists");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                Specialist[] array = mapper.readValue(reader, Specialist[].class);
+                specialists = Arrays.asList(array);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return specialists;
+    }
+
+    public void addSpecialist(Specialist specialist) {
+        try {
+            URL url = new URL(BASE_URL + "/specialists");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+
+            String params = (specialist.getId() != null ? "id=" + specialist.getId() + "&" : "") +
+                    "fullName=" + java.net.URLEncoder.encode(specialist.getFullName(), StandardCharsets.UTF_8) +
+                    "&specialization=" + java.net.URLEncoder.encode(specialist.getSpecialization(), StandardCharsets.UTF_8) +
+                    "&phone=" + java.net.URLEncoder.encode(specialist.getPhone(), StandardCharsets.UTF_8);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(params.getBytes(StandardCharsets.UTF_8));
+            }
+            conn.getResponseCode();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteSpecialist(Long id) {
+        try {
+            URL url = new URL(BASE_URL + "/specialists?action=delete&id=" + id);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.getResponseCode();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    // ================= REQUESTS (Заявки) =================
+
+    public List<Request> getRequests() {
+        List<Request> requests = new ArrayList<>();
+        try {
+            URL url = new URL(BASE_URL + "/requests");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                Request[] array = mapper.readValue(reader, Request[].class);
+                requests = Arrays.asList(array);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return requests;
+    }
+
+    public void addRequest(Request request) {
+        try {
+            URL url = new URL(BASE_URL + "/requests");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+
+            String params = (request.getId() != null ? "id=" + request.getId() + "&" : "") +
+                    "roomId=" + request.getRoomId() +
+                    (request.getSpecialistId() != null ? "&specialistId=" + request.getSpecialistId() : "") +
+                    "&description=" + java.net.URLEncoder.encode(request.getDescription(), StandardCharsets.UTF_8) +
+                    "&state=" + java.net.URLEncoder.encode(request.getState(), StandardCharsets.UTF_8);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(params.getBytes(StandardCharsets.UTF_8));
+            }
+            conn.getResponseCode();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteRequest(Long id) {
+        try {
+            URL url = new URL(BASE_URL + "/requests?action=delete&id=" + id);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.getResponseCode();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    // ================= EXECUTION RECORDS (Записи виконання) =================
+
+    public List<ExecutionRecord> getExecutionRecords() {
+        List<ExecutionRecord> records = new ArrayList<>();
+        try {
+            URL url = new URL(BASE_URL + "/execution-records");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                ExecutionRecord[] array = mapper.readValue(reader, ExecutionRecord[].class);
+                records = Arrays.asList(array);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return records;
+    }
+
+    public void addExecutionRecord(ExecutionRecord record) {
+        try {
+            URL url = new URL(BASE_URL + "/execution-records");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+
+            String params = (record.getId() != null ? "id=" + record.getId() + "&" : "") +
+                    "requestId=" + record.getRequestId() +
+                    "&executionDate=" + java.net.URLEncoder.encode(record.getExecutionDate(), StandardCharsets.UTF_8) +
+                    "&resultNotes=" + java.net.URLEncoder.encode(record.getResultNotes(), StandardCharsets.UTF_8);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(params.getBytes(StandardCharsets.UTF_8));
+            }
+            conn.getResponseCode();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteExecutionRecord(Long id) {
+        try {
+            URL url = new URL(BASE_URL + "/execution-records?action=delete&id=" + id);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.getResponseCode();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

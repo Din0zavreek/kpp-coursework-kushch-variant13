@@ -7,13 +7,13 @@ import java.sql.SQLException;
 public class DBUtil {
     private static final String URL = "jdbc:mysql://localhost:3306/hotel_requests?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
     private static final String USER = "root";
-    private static final String PASSWORD = "";
+    private static final String PASSWORD = ""; // Змініть, якщо у вас встановлений пароль для MySQL
 
     static {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Не вдалося завантажити драйвер MySQL JDBC", e);
+            e.printStackTrace();
         }
     }
 

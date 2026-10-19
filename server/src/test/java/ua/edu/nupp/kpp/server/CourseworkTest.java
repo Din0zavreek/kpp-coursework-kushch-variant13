@@ -60,7 +60,7 @@ public class CourseworkTest {
         Room room = new Room();
         room.setRoomNumber("202");
         room.setCategory("Люкс");
-        room.setFloor(-1); // Некоректний поверх
+        room.setFloor(-1);
 
         assertTrue(room.getFloor() < 0, "Поверх не може бути від'ємним");
     }

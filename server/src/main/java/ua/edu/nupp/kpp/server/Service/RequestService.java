@@ -5,39 +5,60 @@ import ua.edu.nupp.kpp.server.Models.Request;
 import ua.edu.nupp.kpp.server.Models.RequestState;
 
 import java.sql.SQLException;
-import java.util.logging.Logger;
+import java.util.List;
 
 public class RequestService {
-    private static final Logger LOG = Logger.getLogger(RequestService.class.getName());
     private final RequestDAO requestDAO = new RequestDAO();
 
-    public boolean isValidStateTransition(RequestState from, RequestState to) {
-        if (from == null || to == null) return false;
-        switch (from) {
+    public List<Request> getAllRequests() {
+        try {
+            return requestDAO.getAll();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void addRequest(Request r) {
+        try {
+            requestDAO.insert(r);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateRequest(Request r) {
+        try {
+            requestDAO.update(r);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteRequest(Long id) {
+        try {
+            requestDAO.delete(id);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean isValidStateTransition(RequestState currentState, RequestState nextState) {
+        if (currentState == null || nextState == null) {
+            return false;
+        }
+
+        switch (currentState) {
             case НОВА:
-                return to == RequestState.ПРИЗНАЧЕНА;
+                return nextState == RequestState.ПРИЗНАЧЕНА;
             case ПРИЗНАЧЕНА:
-                return to == RequestState.В_РОБОТІ;
+                return nextState == RequestState.В_РОБОТІ;
             case В_РОБОТІ:
-                return to == RequestState.ВИКОНАНО;
+                return nextState == RequestState.ВИКОНАНО;
             case ВИКОНАНО:
                 return false;
             default:
                 return false;
         }
-    }
-
-    public void changeState(Long requestId, RequestState newState) throws SQLException {
-        Request request = requestDAO.getById(requestId);
-        if (request == null) {
-            throw new IllegalArgumentException("Заявку з ID " + requestId + " не знайдено");
-        }
-
-        if (!isValidStateTransition(request.getState(), newState)) {
-            throw new IllegalArgumentException("Недопустимий перехід стану з " + request.getState() + " у " + newState);
-        }
-
-        requestDAO.updateState(requestId, newState);
-        LOG.info("Змінено стан заявки " + requestId + " на " + newState);
     }
 }
