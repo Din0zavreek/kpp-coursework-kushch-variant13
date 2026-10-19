@@ -185,9 +185,15 @@ public class HttpHotelClient {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                ExecutionRecord[] array = mapper.readValue(reader, ExecutionRecord[].class);
-                records = Arrays.asList(array);
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    ExecutionRecord[] array = mapper.readValue(reader, ExecutionRecord[].class);
+                    if (array != null) {
+                        records = Arrays.asList(array);
+                    }
+                }
+            } else {
+                System.out.println("Сервер повернув код помилки для execution-records: " + conn.getResponseCode());
             }
         } catch (Exception e) {
             e.printStackTrace();

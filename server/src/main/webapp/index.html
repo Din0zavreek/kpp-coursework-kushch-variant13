@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель управління готелем</title>
+</head>
+<body>
+<h1>Вітаємо у веб-застосунку готелю!</h1>
+<p>Сервер успішно запущено.</p>
+
+<button onclick="loadRooms()">Завантажити список кімнат</button>
+<pre id="output"></pre>
+
+<script>
+    function loadRooms() {
+        fetch('./rooms')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(err => console.error(err));
+    }
+</script>
+</body>
+</html>
