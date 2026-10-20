@@ -9,7 +9,7 @@ import java.util.List;
 public class ExecutionRecordDAO {
     public List<ExecutionRecord> getAll() throws SQLException {
         List<ExecutionRecord> list = new ArrayList<>();
-        String sql = "SELECT id, request_id, report_details, completed_date FROM execution_record";
+        String sql = "SELECT id, request_id, completed_date, report_details FROM execution_record";
         try (Connection c = DBUtil.getConnection(); Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 list.add(new ExecutionRecord(

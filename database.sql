@@ -49,6 +49,5 @@ INSERT INTO specialist (full_name, specialization, phone) VALUES
 INSERT INTO request (room_id, specialist_id, description, state, f1, f2, f3, priority_index) VALUES
                                                                                                  (1, 1, 'Протікає кран у ванній кімнаті', 'НОВА', 70.0, 60.0, 50.0, 61.5),
                                                                                                  (2, 2, 'Не працює кондиціонер', 'ПРИЗНАЧЕНА', 80.0, 90.0, 70.0, 80.5);
-
-INSERT INTO execution_record (request_id, report_details, completed_date) VALUES
-    (1, 'очікує виконання', '2026-10-19');
+INSERT INTO execution_record (id, request_id, completed_date, report_details) VALUES
+    (1, 1, '2026-10-19', 'очікує виконання');
