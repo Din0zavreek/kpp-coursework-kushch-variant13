@@ -9,7 +9,8 @@ public class RiskCalculator {
         if (factor1 < 0 || factor1 > 100 || factor2 < 0 || factor2 > 100 || factor3 < 0 || factor3 > 100) {
             throw new IllegalArgumentException("Invalid factor value");
         }
-        return (factor1 + factor2 + factor3) / 3.0;
+
+        return 0.40 * factor1 + 0.35 * factor2 + 0.25 * factor3;
     }
 
     public double calculateOverallRisk(List<Request> requests) {

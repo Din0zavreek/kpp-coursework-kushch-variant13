@@ -9,14 +9,15 @@ import java.util.List;
 public class ExecutionRecordDAO {
     public List<ExecutionRecord> getAll() throws SQLException {
         List<ExecutionRecord> list = new ArrayList<>();
-        String sql = "SELECT id, request_id, execution_date, result_notes FROM execution_record";
+        // Зверніть увагу на назви стовпчиків згідно з вашим database.sql:
+        String sql = "SELECT id, request_id, report_details, completed_date FROM execution_record";
         try (Connection c = DBUtil.getConnection(); Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 list.add(new ExecutionRecord(
                         rs.getLong("id"),
                         rs.getLong("request_id"),
-                        rs.getString("execution_date"),
-                        rs.getString("result_notes")
+                        rs.getString("completed_date"),
+                        rs.getString("report_details")
                 ));
             }
         }

@@ -14,14 +14,12 @@ public class CourseworkTest {
 
     @Test
     void priorityIndexCalculationTest() {
-
         double result = RiskCalculator.calculate(70.0, 60.0, 50.0);
         assertEquals(61.5, result, 0.001);
     }
 
     @Test
     void riskCalculatorRejectsInvalidFactor() {
-
         assertThrows(IllegalArgumentException.class, () -> {
             RiskCalculator.calculate(120.0, 50.0, 50.0);
         });
@@ -33,9 +31,8 @@ public class CourseworkTest {
     }
 
     @Test
-    double assignedToInProgressTransitionAllowed() {
+    void assignedToInProgressTransitionAllowed() {
         assertTrue(requestService.isValidStateTransition(RequestState.ПРИЗНАЧЕНА, RequestState.В_РОБОТІ));
-        return 0;
     }
 
     @Test
@@ -45,13 +42,11 @@ public class CourseworkTest {
 
     @Test
     void newToCompletedTransitionRejected() {
-
         assertFalse(requestService.isValidStateTransition(RequestState.НОВА, RequestState.ВИКОНАНО));
     }
 
     @Test
     void completedStateIsFinal() {
-
         assertFalse(requestService.isValidStateTransition(RequestState.ВИКОНАНО, RequestState.В_РОБОТІ));
     }
 

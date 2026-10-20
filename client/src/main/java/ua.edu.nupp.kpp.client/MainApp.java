@@ -203,15 +203,22 @@ public class MainApp extends Application {
         TableColumn<Request, Long> specCol = new TableColumn<>("ID Спец."); specCol.setCellValueFactory(new PropertyValueFactory<>("specialistId"));
         TableColumn<Request, String> descCol = new TableColumn<>("Опис"); descCol.setCellValueFactory(new PropertyValueFactory<>("description"));
         TableColumn<Request, String> stateCol = new TableColumn<>("Стан"); stateCol.setCellValueFactory(new PropertyValueFactory<>("state"));
-        requestTable.getColumns().addAll(idCol, roomCol, specCol, descCol, stateCol);
+        TableColumn<Request, Double> priorityCol = new TableColumn<>("Пріоритет (I)"); priorityCol.setCellValueFactory(new PropertyValueFactory<>("priorityIndex"));
+
+        requestTable.getColumns().addAll(idCol, roomCol, specCol, descCol, stateCol, priorityCol);
 
         VBox form = new VBox(10); form.setPadding(new Insets(10));
         TextField idField = new TextField(); idField.setVisible(false); idField.setManaged(false);
         TextField roomField = new TextField(); roomField.setPromptText("ID Номера");
         TextField specField = new TextField(); specField.setPromptText("ID Спеціаліста");
         TextField descField = new TextField(); descField.setPromptText("Опис проблеми");
-        ComboBox<String> stateCombo = new ComboBox<>(FXCollections.observableArrayList("НОВА", "ПРИЗНАЧЕНА", "В_РОБОТІ", "ВИКОНАНА"));
+
+        ComboBox<String> stateCombo = new ComboBox<>(FXCollections.observableArrayList("НОВА", "ПРИЗНАЧЕНА", "В_РОБОТІ", "ВИКОНАНО"));
         stateCombo.setPromptText("Оберіть стан");
+
+        TextField f1Field = new TextField("70.0"); f1Field.setPromptText("Фактор F1 (0-100)");
+        TextField f2Field = new TextField("60.0"); f2Field.setPromptText("Фактор F2 (0-100)");
+        TextField f3Field = new TextField("50.0"); f3Field.setPromptText("Фактор F3 (0-100)");
 
         Button saveButton = new Button("Зберегти / Додати");
         Button deleteButton = new Button("Видалити вибране");
@@ -224,6 +231,9 @@ public class MainApp extends Application {
                 specField.setText(newVal.getSpecialistId() != null ? newVal.getSpecialistId().toString() : "");
                 descField.setText(newVal.getDescription());
                 stateCombo.setValue(newVal.getState());
+                f1Field.setText(String.valueOf(newVal.getF1()));
+                f2Field.setText(String.valueOf(newVal.getF2()));
+                f3Field.setText(String.valueOf(newVal.getF3()));
             }
         });
 
@@ -234,7 +244,11 @@ public class MainApp extends Application {
                 r.setRoomId(Long.parseLong(roomField.getText()));
                 r.setSpecialistId(!specField.getText().isEmpty() ? Long.parseLong(specField.getText()) : null);
                 r.setDescription(descField.getText());
-                r.setState(stateCombo.getValue());
+                r.setState(stateCombo.getValue() != null ? stateCombo.getValue() : "НОВА");
+                r.setF1(Double.parseDouble(f1Field.getText()));
+                r.setF2(Double.parseDouble(f2Field.getText()));
+                r.setF3(Double.parseDouble(f3Field.getText()));
+
                 client.addRequest(r);
                 refreshRequests();
             } catch (Exception ex) { showError(ex.getMessage()); }
@@ -249,6 +263,7 @@ public class MainApp extends Application {
         refreshButton.setOnAction(e -> refreshRequests());
 
         form.getChildren().addAll(new Label("Керування заявками"), idField, roomField, specField, descField, stateCombo,
+                new Label("Фактори для розрахунку пріоритету:"), f1Field, f2Field, f3Field,
                 saveButton, deleteButton, refreshButton);
 
         SplitPane split = new SplitPane(requestTable, form);
@@ -259,10 +274,19 @@ public class MainApp extends Application {
     // --- 4. ПАНЕЛЬ ВИКОНАННЯ ---
     private SplitPane createExecutionRecordPane() {
         recordTable = new TableView<>();
-        TableColumn<ExecutionRecord, Long> idCol = new TableColumn<>("ID"); idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-        TableColumn<ExecutionRecord, Long> reqCol = new TableColumn<>("ID Заявки"); reqCol.setCellValueFactory(new PropertyValueFactory<>("requestId"));
-        TableColumn<ExecutionRecord, String> dateCol = new TableColumn<>("Дата"); dateCol.setCellValueFactory(new PropertyValueFactory<>("executionDate"));
-        TableColumn<ExecutionRecord, String> notesCol = new TableColumn<>("Нотатки"); notesCol.setCellValueFactory(new PropertyValueFactory<>("resultNotes"));
+        TableColumn<ExecutionRecord, Long> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<ExecutionRecord, Long> reqCol = new TableColumn<>("ID Заявки");
+        reqCol.setCellValueFactory(new PropertyValueFactory<>("requestId"));
+
+        // Змінено назви властивостей на правильні (executionDate та resultNotes)
+        TableColumn<ExecutionRecord, String> dateCol = new TableColumn<>("Дата");
+        dateCol.setCellValueFactory(new PropertyValueFactory<>("executionDate"));
+
+        TableColumn<ExecutionRecord, String> notesCol = new TableColumn<>("Нотатки");
+        notesCol.setCellValueFactory(new PropertyValueFactory<>("resultNotes"));
+
         recordTable.getColumns().addAll(idCol, reqCol, dateCol, notesCol);
 
         VBox form = new VBox(10); form.setPadding(new Insets(10));
@@ -275,31 +299,48 @@ public class MainApp extends Application {
         Button deleteButton = new Button("Видалити вибране");
         Button refreshButton = new Button("Оновити");
 
+        // Слухач для заповнення форми при кліку на рядок (для редагування)
         recordTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
-                idField.setText(newVal.getId().toString());
-                reqField.setText(newVal.getRequestId().toString());
-                dateField.setText(newVal.getExecutionDate());
-                notesField.setText(newVal.getResultNotes());
+                idField.setText(newVal.getId() != null ? newVal.getId().toString() : "");
+                reqField.setText(newVal.getRequestId() != null ? newVal.getRequestId().toString() : "");
+                dateField.setText(newVal.getExecutionDate() != null ? newVal.getExecutionDate() : "");
+                notesField.setText(newVal.getResultNotes() != null ? newVal.getResultNotes() : "");
             }
         });
 
         saveButton.setOnAction(e -> {
             try {
                 ExecutionRecord rec = new ExecutionRecord();
-                if (!idField.getText().isEmpty()) rec.setId(Long.parseLong(idField.getText()));
+                if (!idField.getText().isEmpty()) {
+                    rec.setId(Long.parseLong(idField.getText()));
+                }
                 rec.setRequestId(Long.parseLong(reqField.getText()));
                 rec.setExecutionDate(dateField.getText());
                 rec.setResultNotes(notesField.getText());
+
                 client.addExecutionRecord(rec);
                 refreshRecords();
-            } catch (Exception ex) { showError(ex.getMessage()); }
+
+                // Очищення форми після збереження
+                idField.clear();
+                reqField.clear();
+                dateField.clear();
+                notesField.clear();
+                recordTable.getSelectionModel().clearSelection();
+            } catch (Exception ex) {
+                showError("Помилка збереження: " + ex.getMessage());
+            }
         });
 
         deleteButton.setOnAction(e -> {
             ExecutionRecord selected = recordTable.getSelectionModel().getSelectedItem();
-            if (selected != null) { client.deleteExecutionRecord(selected.getId()); refreshRecords(); }
-            else { showError("Оберіть запис!"); }
+            if (selected != null) {
+                client.deleteExecutionRecord(selected.getId());
+                refreshRecords();
+            } else {
+                showError("Оберіть запис для видалення!");
+            }
         });
 
         refreshButton.setOnAction(e -> refreshRecords());

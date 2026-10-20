@@ -38,7 +38,7 @@ CREATE TABLE execution_record (
                                   FOREIGN KEY (request_id) REFERENCES request(id)
 );
 
-INSERT INTO (room_number, category, floor) VALUES
+INSERT INTO room (room_number, category, floor) VALUES
                                                     ('101', 'Стандарт', 1),
                                                     ('205', 'Люкс', 2);
 
@@ -51,4 +51,4 @@ INSERT INTO request (room_id, specialist_id, description, state, f1, f2, f3, pri
                                                                                                  (2, 2, 'Не працює кондиціонер', 'ПРИЗНАЧЕНА', 80.0, 90.0, 70.0, 80.5);
 
 INSERT INTO execution_record (request_id, report_details, completed_date) VALUES
-    (1, очікує виконання, '2026-10-19');
+    (1, 'очікує виконання', '2026-10-19');

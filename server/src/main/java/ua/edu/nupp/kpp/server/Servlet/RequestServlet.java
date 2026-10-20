@@ -3,6 +3,7 @@ package ua.edu.nupp.kpp.server.Servlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ua.edu.nupp.kpp.server.Models.Request;
 import ua.edu.nupp.kpp.server.Service.RequestService;
+import ua.edu.nupp.kpp.server.Service.RiskCalculator;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
@@ -45,7 +46,15 @@ public class RequestServlet extends HttpServlet {
             r.setDescription(req.getParameter("description"));
             r.setState(req.getParameter("state"));
 
-            if (idStr != null && !idStr.isEmpty()) {
+            double f1 = req.getParameter("f1") != null && !req.getParameter("f1").isEmpty() ? Double.parseDouble(req.getParameter("f1")) : 70.0;
+            double f2 = req.getParameter("f2") != null && !req.getParameter("f2").isEmpty() ? Double.parseDouble(req.getParameter("f2")) : 60.0;
+            double f3 = req.getParameter("f3") != null && !req.getParameter("f3").isEmpty() ? Double.parseDouble(req.getParameter("f3")) : 50.0;
+            r.setF1(f1);
+            r.setF2(f2);
+            r.setF3(f3);
+            r.setPriorityIndex(RiskCalculator.calculate(f1, f2, f3));
+
+            if (idStr != null && !idStr.isEmpty() && !"null".equals(idStr)) {
                 r.setId(Long.parseLong(idStr));
                 service.updateRequest(r);
             } else {

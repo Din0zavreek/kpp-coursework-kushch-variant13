@@ -153,7 +153,10 @@ public class HttpHotelClient {
                     "roomId=" + request.getRoomId() +
                     (request.getSpecialistId() != null ? "&specialistId=" + request.getSpecialistId() : "") +
                     "&description=" + java.net.URLEncoder.encode(request.getDescription(), StandardCharsets.UTF_8) +
-                    "&state=" + java.net.URLEncoder.encode(request.getState(), StandardCharsets.UTF_8);
+                    "&state=" + java.net.URLEncoder.encode(request.getState(), StandardCharsets.UTF_8) +
+                    "&f1=" + request.getF1() +
+                    "&f2=" + request.getF2() +
+                    "&f3=" + request.getF3();
 
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(params.getBytes(StandardCharsets.UTF_8));
@@ -211,8 +214,8 @@ public class HttpHotelClient {
 
             String params = (record.getId() != null ? "id=" + record.getId() + "&" : "") +
                     "requestId=" + record.getRequestId() +
-                    "&executionDate=" + java.net.URLEncoder.encode(record.getExecutionDate(), StandardCharsets.UTF_8) +
-                    "&resultNotes=" + java.net.URLEncoder.encode(record.getResultNotes(), StandardCharsets.UTF_8);
+                    "&completedDate=" + java.net.URLEncoder.encode(record.getExecutionDate(), StandardCharsets.UTF_8) +
+                    "&reportDetails=" + java.net.URLEncoder.encode(record.getResultNotes(), StandardCharsets.UTF_8);
 
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(params.getBytes(StandardCharsets.UTF_8));

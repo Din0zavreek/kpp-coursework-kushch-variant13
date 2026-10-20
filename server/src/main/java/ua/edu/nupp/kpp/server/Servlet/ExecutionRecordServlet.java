@@ -27,20 +27,22 @@ public class ExecutionRecordServlet extends HttpServlet {
             mapper.writeValue(resp.getWriter(), service.getAllRecords());
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            Map<String, String> err = new HashMap<>(); err.put("error", e.getMessage());
+            Map<String, String> err = new HashMap<>();
+            err.put("error", e.getMessage());
             mapper.writeValue(resp.getWriter(), err);
         }
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.setCharacterEncoding("UTF-8"); resp.setContentType("application/json; charset=UTF-8");
+        req.setCharacterEncoding("UTF-8");
+        resp.setContentType("application/json; charset=UTF-8");
         try {
             String idStr = req.getParameter("id");
             ExecutionRecord rec = new ExecutionRecord();
             rec.setRequestId(Long.parseLong(req.getParameter("requestId")));
-            rec.setExecutionDate(req.getParameter("executionDate"));
-            rec.setResultNotes(req.getParameter("resultNotes"));
+            rec.setExecutionDate(req.getParameter("completedDate"));
+            rec.setResultNotes(req.getParameter("reportDetails"));
 
             if (idStr != null && !idStr.isEmpty()) {
                 rec.setId(Long.parseLong(idStr));
@@ -51,7 +53,8 @@ public class ExecutionRecordServlet extends HttpServlet {
             resp.getWriter().write("{\"status\":\"success\"}");
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            Map<String, String> err = new HashMap<>(); err.put("error", e.getMessage());
+            Map<String, String> err = new HashMap<>();
+            err.put("error", e.getMessage());
             mapper.writeValue(resp.getWriter(), err);
         }
     }
