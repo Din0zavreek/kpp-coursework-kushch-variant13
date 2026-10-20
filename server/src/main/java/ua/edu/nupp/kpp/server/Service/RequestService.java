@@ -33,7 +33,7 @@ public class RequestService {
 
     public void updateRequest(Request r) {
         try {
-            // Отримуємо стару заявку з бази, щоб перевірити попередній стан
+
             List<Request> all = requestDAO.getAll();
             Request old = all.stream().filter(req -> req.getId().equals(r.getId())).findFirst().orElse(null);
 
@@ -41,7 +41,6 @@ public class RequestService {
                 RequestState currentState = RequestState.valueOf(old.getState());
                 RequestState nextState = RequestState.valueOf(r.getState());
 
-                // Якщо стан змінюється, перевіряємо чи дозволений перехід
                 if (currentState != nextState) {
                     if (!isValidStateTransition(currentState, nextState)) {
                         throw new IllegalArgumentException("Недопустикре перемикання стану з " + currentState + " на " + nextState);

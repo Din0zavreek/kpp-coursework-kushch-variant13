@@ -16,8 +16,6 @@ public class HttpHotelClient {
     private static final String BASE_URL = "http://localhost:8080/server";
     private final ObjectMapper mapper = new ObjectMapper();
 
-    // ================= ROOMS (Номери) =================
-
     public List<Room> getRooms() {
         List<Room> rooms = new ArrayList<>();
         try {
@@ -68,9 +66,6 @@ public class HttpHotelClient {
         }
     }
 
-
-    // ================= SPECIALISTS (Спеціалісти) =================
-
     public List<Specialist> getSpecialists() {
         List<Specialist> specialists = new ArrayList<>();
         try {
@@ -120,9 +115,6 @@ public class HttpHotelClient {
             e.printStackTrace();
         }
     }
-
-
-    // ================= REQUESTS (Заявки) =================
 
     public List<Request> getRequests() {
         List<Request> requests = new ArrayList<>();
@@ -177,9 +169,6 @@ public class HttpHotelClient {
             e.printStackTrace();
         }
     }
-
-
-    // ================= EXECUTION RECORDS (Записи виконання) =================
 
     public List<ExecutionRecord> getExecutionRecords() {
         List<ExecutionRecord> records = new ArrayList<>();

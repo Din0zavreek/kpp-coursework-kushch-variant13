@@ -7,7 +7,6 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -138,7 +137,6 @@ public class MainApp extends Application {
         roomTable.getSelectionModel().clearSelection();
     }
 
-    // --- 2. ПАНЕЛЬ СПЕЦІАЛІСТІВ ---
     private SplitPane createSpecialistPane() {
         specialistTable = new TableView<>();
         TableColumn<Specialist, Long> idCol = new TableColumn<>("ID"); idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -195,7 +193,6 @@ public class MainApp extends Application {
         return split;
     }
 
-    // --- 3. ПАНЕЛЬ ЗАЯВОК ---
     private SplitPane createRequestPane() {
         requestTable = new TableView<>();
         TableColumn<Request, Long> idCol = new TableColumn<>("ID"); idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -220,8 +217,8 @@ public class MainApp extends Application {
         TextField f2Field = new TextField("60.0"); f2Field.setPromptText("Фактор F2 (0-100)");
         TextField f3Field = new TextField("50.0"); f3Field.setPromptText("Фактор F3 (0-100)");
 
-        Button saveButton = new Button("Зберегти зміни"); // Тільки для редагування
-        Button newButton = new Button("Нова");             // Тільки для створення
+        Button saveButton = new Button("Зберегти зміни");
+        Button newButton = new Button("Нова");
         Button deleteButton = new Button("Видалити вибране");
         Button refreshButton = new Button("Оновити");
 
@@ -238,7 +235,6 @@ public class MainApp extends Application {
             }
         });
 
-        // КНОПКА "НОВА" — Створення нового запису
         newButton.setOnAction(e -> {
             try {
                 Request r = new Request();
@@ -250,10 +246,9 @@ public class MainApp extends Application {
                 r.setF2(Double.parseDouble(f2Field.getText()));
                 r.setF3(Double.parseDouble(f3Field.getText()));
 
-                client.addRequest(r); // ID немає, тому сервлет створить новий запис
+                client.addRequest(r);
                 refreshRequests();
 
-                // Очищення форми
                 idField.clear();
                 roomField.clear();
                 specField.clear();
@@ -266,7 +261,6 @@ public class MainApp extends Application {
             }
         });
 
-        // КНОПКА "ЗБЕРЕГТИ ЗМІНИ" — Виключно для редагування вибраного
         saveButton.setOnAction(e -> {
             try {
                 if (idField.getText().isEmpty()) {
@@ -283,7 +277,7 @@ public class MainApp extends Application {
                 r.setF2(Double.parseDouble(f2Field.getText()));
                 r.setF3(Double.parseDouble(f3Field.getText()));
 
-                client.addRequest(r); // Сервлет оновить існуючий за ID
+                client.addRequest(r);
                 refreshRequests();
                 showAlert("Успіх", "Зміни до заявки збережено!");
             } catch (Exception ex) {
@@ -308,7 +302,6 @@ public class MainApp extends Application {
         return split;
     }
 
-    // --- 4. ПАНЕЛЬ ВИКОНАННЯ ---
     private SplitPane createExecutionRecordPane() {
         recordTable = new TableView<>();
         TableColumn<ExecutionRecord, Long> idCol = new TableColumn<>("ID");
@@ -345,7 +338,6 @@ public class MainApp extends Application {
             }
         });
 
-        // КНОПКА "НОВА" — Створення нового запису виконання
         newButton.setOnAction(e -> {
             try {
                 if (reqField.getText().isEmpty()) {
@@ -371,7 +363,6 @@ public class MainApp extends Application {
             }
         });
 
-        // КНОПКА "ЗБЕРЕГТИ ЗМІНИ" — Редагування вибраного запису
         saveButton.setOnAction(e -> {
             try {
                 if (idField.getText().isEmpty()) {
@@ -412,7 +403,6 @@ public class MainApp extends Application {
         return split;
     }
 
-    // --- МЕТОДИ ОТРИМАННЯ ДАНИХ З КЛІЄНТА ---
     private void refreshAllData() {
         refreshRooms();
         refreshSpecialists();
