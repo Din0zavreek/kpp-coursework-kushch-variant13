@@ -1,62 +1,89 @@
 package ua.edu.nupp.kpp.server;
 
-import org.junit.jupiter.api.Test;
+import ua.edu.nupp.kpp.server.Models.Request;
 import ua.edu.nupp.kpp.server.Models.RequestState;
-import ua.edu.nupp.kpp.server.Models.Room;
 import ua.edu.nupp.kpp.server.Service.RequestService;
 import ua.edu.nupp.kpp.server.Service.RiskCalculator;
-
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CourseworkTest {
+class CourseworkTest {
 
-    private final RequestService requestService = new RequestService();
+    private RiskCalculator riskCalculator;
+    private RequestService requestService;
 
-    @Test
-    void priorityIndexCalculationTest() {
-        double result = RiskCalculator.calculate(70.0, 60.0, 50.0);
-        assertEquals(61.5, result, 0.001);
+    @BeforeEach
+    void setUp() {
+        riskCalculator = new RiskCalculator();
+        requestService = new RequestService();
     }
 
     @Test
-    void riskCalculatorRejectsInvalidFactor() {
+    void testRiskCalculationStandardValues() {
+        double result = riskCalculator.calculate(80.0, 60.0, 100.0);
+        assertEquals(78.0, result, 0.001);
+    }
+
+    @Test
+    void testRiskCalculationMinimumValues() {
+        double result = riskCalculator.calculate(0.0, 0.0, 0.0);
+        assertEquals(0.0, result, 0.001);
+    }
+
+    @Test
+    void testRiskCalculationMaximumValues() {
+        double result = riskCalculator.calculate(100.0, 100.0, 100.0);
+        assertEquals(100.0, result, 0.001);
+    }
+
+    @Test
+    void testRiskCalculationWeightsSum() {
+        double result = riskCalculator.calculate(50.0, 50.0, 50.0);
+        assertEquals(50.0, result, 0.001);
+    }
+
+    @Test
+    void testRiskCalculationInvalidFactorThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> {
-            RiskCalculator.calculate(120.0, 50.0, 50.0);
+            riskCalculator.calculate(150.0, 50.0, 50.0);
         });
     }
 
     @Test
-    void newToAssignedTransitionAllowed() {
-        assertTrue(requestService.isValidStateTransition(RequestState.НОВА, RequestState.ПРИЗНАЧЕНА));
+    void testInitialStateDefault() {
+        Request request = new Request();
+        request.setState("НОВА");
+        assertEquals("НОВА", request.getState());
     }
 
     @Test
-    void assignedToInProgressTransitionAllowed() {
-        assertTrue(requestService.isValidStateTransition(RequestState.ПРИЗНАЧЕНА, RequestState.В_РОБОТІ));
+    void testValidTransitionNewToAssigned() {
+        boolean valid = requestService.isValidStateTransition(RequestState.НОВА, RequestState.ПРИЗНАЧЕНА);
+        assertTrue(valid);
     }
 
     @Test
-    void inProgressToCompletedTransitionAllowed() {
-        assertTrue(requestService.isValidStateTransition(RequestState.В_РОБОТІ, RequestState.ВИКОНАНО));
+    void testValidTransitionAssignedToInProgress() {
+        boolean valid = requestService.isValidStateTransition(RequestState.ПРИЗНАЧЕНА, RequestState.В_РОБОТІ);
+        assertTrue(valid);
     }
 
     @Test
-    void newToCompletedTransitionRejected() {
-        assertFalse(requestService.isValidStateTransition(RequestState.НОВА, RequestState.ВИКОНАНО));
+    void testValidTransitionInProgressToCompleted() {
+        boolean valid = requestService.isValidStateTransition(RequestState.В_РОБОТІ, RequestState.ВИКОНАНО);
+        assertTrue(valid);
     }
 
     @Test
-    void completedStateIsFinal() {
-        assertFalse(requestService.isValidStateTransition(RequestState.ВИКОНАНО, RequestState.В_РОБОТІ));
+    void testInvalidBackwardTransition() {
+        boolean valid = requestService.isValidStateTransition(RequestState.В_РОБОТІ, RequestState.НОВА);
+        assertFalse(valid);
     }
 
     @Test
-    void roomFloorValidationTest() {
-        Room room = new Room();
-        room.setRoomNumber("202");
-        room.setCategory("Люкс");
-        room.setFloor(-1);
-
-        assertTrue(room.getFloor() < 0, "Поверх не може бути від'ємним");
+    void testInvalidJumpTransition() {
+        boolean valid = requestService.isValidStateTransition(RequestState.НОВА, RequestState.ВИКОНАНО);
+        assertFalse(valid);
     }
 }

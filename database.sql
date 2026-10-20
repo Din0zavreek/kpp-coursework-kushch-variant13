@@ -26,8 +26,8 @@ CREATE TABLE request (
                          f2 DOUBLE NOT NULL,
                          f3 DOUBLE NOT NULL,
                          priority_index DOUBLE NOT NULL,
-                         FOREIGN KEY (room_id) REFERENCES room(id),
-                         FOREIGN KEY (specialist_id) REFERENCES specialist(id)
+                         FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE CASCADE,
+                         FOREIGN KEY (specialist_id) REFERENCES specialist(id) ON DELETE SET NULL
 );
 
 CREATE TABLE execution_record (
@@ -35,19 +35,21 @@ CREATE TABLE execution_record (
                                   request_id BIGINT NOT NULL,
                                   report_details TEXT NOT NULL,
                                   completed_date VARCHAR(20) NOT NULL,
-                                  FOREIGN KEY (request_id) REFERENCES request(id)
+                                  FOREIGN KEY (request_id) REFERENCES request(id) ON DELETE CASCADE
 );
 
-INSERT INTO room (room_number, category, floor) VALUES
-                                                    ('101', 'Стандарт', 1),
-                                                    ('205', 'Люкс', 2);
+INSERT INTO room (id, room_number, category, floor) VALUES
+                                                        (1, '101', 'Стандарт', 1),
+                                                        (2, '205', 'Люкс', 2);
 
-INSERT INTO specialist (full_name, specialization, phone) VALUES
-                                                              ('Іван Петренко', 'Сантехніка', '+380501112233'),
-                                                              ('Олег Сидоренко', 'Електрика', '+380673334455');
+INSERT INTO specialist (id, full_name, specialization, phone) VALUES
+                                                                  (1, 'Іван Петренко', 'Сантехніка', '+380501112233'),
+                                                                  (2, 'Олег Сидоренко', 'Електрика', '+380673334455');
 
-INSERT INTO request (room_id, specialist_id, description, state, f1, f2, f3, priority_index) VALUES
-                                                                                                 (1, 1, 'Протікає кран у ванній кімнаті', 'НОВА', 70.0, 60.0, 50.0, 61.5),
-                                                                                                 (2, 2, 'Не працює кондиціонер', 'ПРИЗНАЧЕНА', 80.0, 90.0, 70.0, 80.5);
-INSERT INTO execution_record (id, request_id, completed_date, report_details) VALUES
-    (1, 1, '2026-10-19', 'очікує виконання');
+INSERT INTO request (id, room_id, specialist_id, description, state, f1, f2, f3, priority_index) VALUES
+                                                                                                     (1, 1, 1, 'Протікає кран у ванній кімнаті', 'НОВА', 70.0, 60.0, 50.0, 61.5),
+                                                                                                     (2, 2, 2, 'Не працює кондиціонер', 'ПРИЗНАЧЕНА', 80.0, 90.0, 70.0, 80.5);
+
+INSERT INTO execution_record (id, request_id, report_details, completed_date) VALUES
+                                                                                  (1, 1, 'очікує виконання', '2026-10-20'),
+                                                                                  (2, 2, 'призначено фахівця, очікує виїзду', '2026-10-19');
