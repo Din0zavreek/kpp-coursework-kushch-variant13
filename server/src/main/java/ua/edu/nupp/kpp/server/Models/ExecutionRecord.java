@@ -1,9 +1,17 @@
 package ua.edu.nupp.kpp.server.Models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ExecutionRecord {
     private Long id;
+
+    @JsonProperty("requestId")
     private Long requestId;
+
+    @JsonProperty("completedDate")
     private String executionDate;
+
+    @JsonProperty("reportDetails")
     private String resultNotes;
 
     public ExecutionRecord() {}
@@ -17,10 +25,13 @@ public class ExecutionRecord {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
     public Long getRequestId() { return requestId; }
     public void setRequestId(Long requestId) { this.requestId = requestId; }
+
     public String getExecutionDate() { return executionDate; }
     public void setExecutionDate(String executionDate) { this.executionDate = executionDate; }
+
     public String getResultNotes() { return resultNotes; }
     public void setResultNotes(String resultNotes) { this.resultNotes = resultNotes; }
 }

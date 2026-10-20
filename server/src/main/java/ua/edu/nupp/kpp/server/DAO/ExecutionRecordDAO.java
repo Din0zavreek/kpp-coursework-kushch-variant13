@@ -9,7 +9,6 @@ import java.util.List;
 public class ExecutionRecordDAO {
     public List<ExecutionRecord> getAll() throws SQLException {
         List<ExecutionRecord> list = new ArrayList<>();
-        // Зверніть увагу на назви стовпчиків згідно з вашим database.sql:
         String sql = "SELECT id, request_id, report_details, completed_date FROM execution_record";
         try (Connection c = DBUtil.getConnection(); Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -25,7 +24,7 @@ public class ExecutionRecordDAO {
     }
 
     public void insert(ExecutionRecord rec) throws SQLException {
-        String sql = "INSERT INTO execution_record (request_id, execution_date, result_notes) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO execution_record (request_id, completed_date, report_details) VALUES (?, ?, ?)";
         try (Connection c = DBUtil.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
             p.setLong(1, rec.getRequestId());
             p.setString(2, rec.getExecutionDate());
@@ -35,7 +34,7 @@ public class ExecutionRecordDAO {
     }
 
     public void update(ExecutionRecord rec) throws SQLException {
-        String sql = "UPDATE execution_record SET request_id = ?, execution_date = ?, result_notes = ? WHERE id = ?";
+        String sql = "UPDATE execution_record SET request_id = ?, completed_date = ?, report_details = ? WHERE id = ?";
         try (Connection c = DBUtil.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
             p.setLong(1, rec.getRequestId());
             p.setString(2, rec.getExecutionDate());

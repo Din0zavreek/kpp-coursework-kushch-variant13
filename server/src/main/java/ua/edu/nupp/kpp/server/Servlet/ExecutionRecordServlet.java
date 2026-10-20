@@ -44,7 +44,7 @@ public class ExecutionRecordServlet extends HttpServlet {
             rec.setExecutionDate(req.getParameter("completedDate"));
             rec.setResultNotes(req.getParameter("reportDetails"));
 
-            if (idStr != null && !idStr.isEmpty()) {
+            if (idStr != null && !idStr.isEmpty() && !"null".equals(idStr)) {
                 rec.setId(Long.parseLong(idStr));
                 service.updateRecord(rec);
             } else {

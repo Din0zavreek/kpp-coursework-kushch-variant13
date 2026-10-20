@@ -214,13 +214,14 @@ public class MainApp extends Application {
         TextField descField = new TextField(); descField.setPromptText("Опис проблеми");
 
         ComboBox<String> stateCombo = new ComboBox<>(FXCollections.observableArrayList("НОВА", "ПРИЗНАЧЕНА", "В_РОБОТІ", "ВИКОНАНО"));
-        stateCombo.setPromptText("Оберіть стан");
+        stateCombo.setValue("НОВА");
 
         TextField f1Field = new TextField("70.0"); f1Field.setPromptText("Фактор F1 (0-100)");
         TextField f2Field = new TextField("60.0"); f2Field.setPromptText("Фактор F2 (0-100)");
         TextField f3Field = new TextField("50.0"); f3Field.setPromptText("Фактор F3 (0-100)");
 
-        Button saveButton = new Button("Зберегти / Додати");
+        Button saveButton = new Button("Зберегти зміни"); // Тільки для редагування
+        Button newButton = new Button("Нова");             // Тільки для створення
         Button deleteButton = new Button("Видалити вибране");
         Button refreshButton = new Button("Оновити");
 
@@ -237,10 +238,10 @@ public class MainApp extends Application {
             }
         });
 
-        saveButton.setOnAction(e -> {
+        // КНОПКА "НОВА" — Створення нового запису
+        newButton.setOnAction(e -> {
             try {
                 Request r = new Request();
-                if (!idField.getText().isEmpty()) r.setId(Long.parseLong(idField.getText()));
                 r.setRoomId(Long.parseLong(roomField.getText()));
                 r.setSpecialistId(!specField.getText().isEmpty() ? Long.parseLong(specField.getText()) : null);
                 r.setDescription(descField.getText());
@@ -249,9 +250,45 @@ public class MainApp extends Application {
                 r.setF2(Double.parseDouble(f2Field.getText()));
                 r.setF3(Double.parseDouble(f3Field.getText()));
 
-                client.addRequest(r);
+                client.addRequest(r); // ID немає, тому сервлет створить новий запис
                 refreshRequests();
-            } catch (Exception ex) { showError(ex.getMessage()); }
+
+                // Очищення форми
+                idField.clear();
+                roomField.clear();
+                specField.clear();
+                descField.clear();
+                stateCombo.setValue("НОВА");
+                requestTable.getSelectionModel().clearSelection();
+                showAlert("Успіх", "Нову заявку успішно створено!");
+            } catch (Exception ex) {
+                showError("Помилка створення: " + ex.getMessage());
+            }
+        });
+
+        // КНОПКА "ЗБЕРЕГТИ ЗМІНИ" — Виключно для редагування вибраного
+        saveButton.setOnAction(e -> {
+            try {
+                if (idField.getText().isEmpty()) {
+                    throw new IllegalArgumentException("Оберіть заявку в таблиці для редагування або натисніть 'Нова' для створення!");
+                }
+
+                Request r = new Request();
+                r.setId(Long.parseLong(idField.getText()));
+                r.setRoomId(Long.parseLong(roomField.getText()));
+                r.setSpecialistId(!specField.getText().isEmpty() ? Long.parseLong(specField.getText()) : null);
+                r.setDescription(descField.getText());
+                r.setState(stateCombo.getValue());
+                r.setF1(Double.parseDouble(f1Field.getText()));
+                r.setF2(Double.parseDouble(f2Field.getText()));
+                r.setF3(Double.parseDouble(f3Field.getText()));
+
+                client.addRequest(r); // Сервлет оновить існуючий за ID
+                refreshRequests();
+                showAlert("Успіх", "Зміни до заявки збережено!");
+            } catch (Exception ex) {
+                showError("Помилка редагування: " + ex.getMessage());
+            }
         });
 
         deleteButton.setOnAction(e -> {
@@ -264,7 +301,7 @@ public class MainApp extends Application {
 
         form.getChildren().addAll(new Label("Керування заявками"), idField, roomField, specField, descField, stateCombo,
                 new Label("Фактори для розрахунку пріоритету:"), f1Field, f2Field, f3Field,
-                saveButton, deleteButton, refreshButton);
+                newButton, saveButton, deleteButton, refreshButton);
 
         SplitPane split = new SplitPane(requestTable, form);
         split.setDividerPositions(0.65);
@@ -280,7 +317,6 @@ public class MainApp extends Application {
         TableColumn<ExecutionRecord, Long> reqCol = new TableColumn<>("ID Заявки");
         reqCol.setCellValueFactory(new PropertyValueFactory<>("requestId"));
 
-        // Змінено назви властивостей на правильні (executionDate та resultNotes)
         TableColumn<ExecutionRecord, String> dateCol = new TableColumn<>("Дата");
         dateCol.setCellValueFactory(new PropertyValueFactory<>("executionDate"));
 
@@ -295,11 +331,11 @@ public class MainApp extends Application {
         TextField dateField = new TextField(); dateField.setPromptText("Дата (напр. 2026-10-19)");
         TextField notesField = new TextField(); notesField.setPromptText("Результат виконання");
 
-        Button saveButton = new Button("Зберегти / Додати");
+        Button saveButton = new Button("Зберегти зміни"); // Тільки для редагування
+        Button newButton = new Button("Нова");             // Тільки для створення
         Button deleteButton = new Button("Видалити вибране");
         Button refreshButton = new Button("Оновити");
 
-        // Слухач для заповнення форми при кліку на рядок (для редагування)
         recordTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 idField.setText(newVal.getId() != null ? newVal.getId().toString() : "");
@@ -309,27 +345,50 @@ public class MainApp extends Application {
             }
         });
 
+        // КНОПКА "НОВА" — Створення нового запису виконання
+        newButton.setOnAction(e -> {
+            try {
+                if (reqField.getText().isEmpty()) {
+                    throw new IllegalArgumentException("Введіть ID заявки!");
+                }
+
+                ExecutionRecord rec = new ExecutionRecord();
+                rec.setRequestId(Long.parseLong(reqField.getText()));
+                rec.setExecutionDate(dateField.getText().isEmpty() ? "2026-10-20" : dateField.getText());
+                rec.setResultNotes(notesField.getText());
+
+                client.addExecutionRecord(rec);
+                refreshRecords();
+
+                idField.clear();
+                reqField.clear();
+                dateField.clear();
+                notesField.clear();
+                recordTable.getSelectionModel().clearSelection();
+                showAlert("Успіх", "Новий запис виконання створено!");
+            } catch (Exception ex) {
+                showError("Помилка створення: " + ex.getMessage());
+            }
+        });
+
+        // КНОПКА "ЗБЕРЕГТИ ЗМІНИ" — Редагування вибраного запису
         saveButton.setOnAction(e -> {
             try {
-                ExecutionRecord rec = new ExecutionRecord();
-                if (!idField.getText().isEmpty()) {
-                    rec.setId(Long.parseLong(idField.getText()));
+                if (idField.getText().isEmpty()) {
+                    throw new IllegalArgumentException("Оберіть запис виконання в таблиці для редагування!");
                 }
+
+                ExecutionRecord rec = new ExecutionRecord();
+                rec.setId(Long.parseLong(idField.getText()));
                 rec.setRequestId(Long.parseLong(reqField.getText()));
                 rec.setExecutionDate(dateField.getText());
                 rec.setResultNotes(notesField.getText());
 
                 client.addExecutionRecord(rec);
                 refreshRecords();
-
-                // Очищення форми після збереження
-                idField.clear();
-                reqField.clear();
-                dateField.clear();
-                notesField.clear();
-                recordTable.getSelectionModel().clearSelection();
+                showAlert("Успіх", "Зміни у виконанні збережено!");
             } catch (Exception ex) {
-                showError("Помилка збереження: " + ex.getMessage());
+                showError("Помилка редагування: " + ex.getMessage());
             }
         });
 
@@ -346,7 +405,7 @@ public class MainApp extends Application {
         refreshButton.setOnAction(e -> refreshRecords());
 
         form.getChildren().addAll(new Label("Записи виконання"), idField, reqField, dateField, notesField,
-                saveButton, deleteButton, refreshButton);
+                newButton, saveButton, deleteButton, refreshButton);
 
         SplitPane split = new SplitPane(recordTable, form);
         split.setDividerPositions(0.65);
