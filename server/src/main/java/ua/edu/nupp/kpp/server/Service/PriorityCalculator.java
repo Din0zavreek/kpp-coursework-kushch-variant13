@@ -3,7 +3,7 @@ package ua.edu.nupp.kpp.server.Service;
 import ua.edu.nupp.kpp.server.Models.Request;
 import java.util.List;
 
-public class RiskCalculator {
+public class PriorityCalculator {
 
     public static double calculate(double factor1, double factor2, double factor3) {
         if (factor1 < 0 || factor1 > 100 || factor2 < 0 || factor2 > 100 || factor3 < 0 || factor3 > 100) {
@@ -13,7 +13,7 @@ public class RiskCalculator {
         return 0.40 * factor1 + 0.35 * factor2 + 0.25 * factor3;
     }
 
-    public double calculateOverallRisk(List<Request> requests) {
+    public double calculateOverallPriority(List<Request> requests) {
         if (requests == null || requests.isEmpty()) {
             return 0.0;
         }

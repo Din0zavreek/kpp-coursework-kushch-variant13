@@ -3,50 +3,50 @@ package ua.edu.nupp.kpp.server;
 import ua.edu.nupp.kpp.server.Models.Request;
 import ua.edu.nupp.kpp.server.Models.RequestState;
 import ua.edu.nupp.kpp.server.Service.RequestService;
-import ua.edu.nupp.kpp.server.Service.RiskCalculator;
+import ua.edu.nupp.kpp.server.Service.PriorityCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CourseworkTest {
 
-    private RiskCalculator riskCalculator;
+    private PriorityCalculator priorityCalculator;
     private RequestService requestService;
 
     @BeforeEach
     void setUp() {
-        riskCalculator = new RiskCalculator();
+        priorityCalculator = new PriorityCalculator();
         requestService = new RequestService();
     }
 
     @Test
-    void testRiskCalculationStandardValues() {
-        double result = riskCalculator.calculate(80.0, 60.0, 100.0);
+    void testPriorityCalculationStandardValues() {
+        double result = priorityCalculator.calculate(80.0, 60.0, 100.0);
         assertEquals(78.0, result, 0.001);
     }
 
     @Test
-    void testRiskCalculationMinimumValues() {
-        double result = riskCalculator.calculate(0.0, 0.0, 0.0);
+    void testPriorityCalculationMinimumValues() {
+        double result = priorityCalculator.calculate(0.0, 0.0, 0.0);
         assertEquals(0.0, result, 0.001);
     }
 
     @Test
-    void testRiskCalculationMaximumValues() {
-        double result = riskCalculator.calculate(100.0, 100.0, 100.0);
+    void testPriorityCalculationMaximumValues() {
+        double result = priorityCalculator.calculate(100.0, 100.0, 100.0);
         assertEquals(100.0, result, 0.001);
     }
 
     @Test
-    void testRiskCalculationWeightsSum() {
-        double result = riskCalculator.calculate(50.0, 50.0, 50.0);
+    void testPriorityCalculationWeightsSum() {
+        double result = priorityCalculator.calculate(50.0, 50.0, 50.0);
         assertEquals(50.0, result, 0.001);
     }
 
     @Test
-    void testRiskCalculationInvalidFactorThrowsException() {
+    void testPriorityCalculationInvalidFactorThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> {
-            riskCalculator.calculate(150.0, 50.0, 50.0);
+            priorityCalculator.calculate(150.0, 50.0, 50.0);
         });
     }
 

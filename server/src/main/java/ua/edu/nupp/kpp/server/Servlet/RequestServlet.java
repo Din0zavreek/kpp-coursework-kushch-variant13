@@ -3,7 +3,7 @@ package ua.edu.nupp.kpp.server.Servlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ua.edu.nupp.kpp.server.Models.Request;
 import ua.edu.nupp.kpp.server.Service.RequestService;
-import ua.edu.nupp.kpp.server.Service.RiskCalculator;
+import ua.edu.nupp.kpp.server.Service.PriorityCalculator;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
@@ -52,7 +52,7 @@ public class RequestServlet extends HttpServlet {
             r.setF1(f1);
             r.setF2(f2);
             r.setF3(f3);
-            r.setPriorityIndex(RiskCalculator.calculate(f1, f2, f3));
+            r.setPriorityIndex(PriorityCalculator.calculate(f1, f2, f3));
 
             if (idStr != null && !idStr.isEmpty() && !"null".equals(idStr)) {
                 r.setId(Long.parseLong(idStr));

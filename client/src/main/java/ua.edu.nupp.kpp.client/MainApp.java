@@ -9,7 +9,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
 import java.nio.file.Path;
 
 public class MainApp extends Application {
@@ -69,7 +68,7 @@ public class MainApp extends Application {
         TextField catField = new TextField(); catField.setPromptText("Категорія");
         TextField floorField = new TextField(); floorField.setPromptText("Поверх");
 
-        Button saveButton = new Button("Зберегти / Додати");
+        Button saveButton = new Button("Змінити / Додати");
         Button clearButton = new Button("Очистити форму");
         Button deleteButton = new Button("Видалити вибране");
         Button importCsvButton = new Button("Імпорт CSV");
@@ -151,7 +150,7 @@ public class MainApp extends Application {
         TextField specField = new TextField(); specField.setPromptText("Спеціалізація (напр. Сантехнік)");
         TextField phoneField = new TextField(); phoneField.setPromptText("Телефон");
 
-        Button saveButton = new Button("Зберегти / Додати");
+        Button saveButton = new Button("Змінити / Додати");
         Button deleteButton = new Button("Видалити вибране");
         Button refreshButton = new Button("Оновити");
 
@@ -217,8 +216,8 @@ public class MainApp extends Application {
         TextField f2Field = new TextField("60.0"); f2Field.setPromptText("Фактор F2 (0-100)");
         TextField f3Field = new TextField("50.0"); f3Field.setPromptText("Фактор F3 (0-100)");
 
-        Button saveButton = new Button("Зберегти зміни");
-        Button newButton = new Button("Нова");
+        Button saveButton = new Button("Змінити");
+        Button newButton = new Button("Додати");
         Button deleteButton = new Button("Видалити вибране");
         Button refreshButton = new Button("Оновити");
 
@@ -324,8 +323,8 @@ public class MainApp extends Application {
         TextField dateField = new TextField(); dateField.setPromptText("Дата (напр. 2026-10-19)");
         TextField notesField = new TextField(); notesField.setPromptText("Результат виконання");
 
-        Button saveButton = new Button("Зберегти зміни"); // Тільки для редагування
-        Button newButton = new Button("Нова");             // Тільки для створення
+        Button saveButton = new Button("Змінити");
+        Button newButton = new Button("Додати");
         Button deleteButton = new Button("Видалити вибране");
         Button refreshButton = new Button("Оновити");
 
