@@ -1,12 +1,17 @@
 package ua.edu.nupp.kpp.client;
 
 import javafx.concurrent.Task;
-
-import java.io.BufferedReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ImportRoomsTask extends Task<Integer> {
+    private static final Logger LOG = Logger.getLogger(ImportRoomsTask.class.getName());
+    private static final String EXPECTED_HEADER = "room_number;category;floor";
+
     private final Path filePath;
     private final HttpHotelClient client;
 
@@ -17,44 +22,79 @@ public class ImportRoomsTask extends Task<Integer> {
 
     @Override
     protected Integer call() throws Exception {
-        updateMessage("Читання CSV-файлу...");
+        LOG.info("Початок фонового імпорту номерів із файла: " + filePath);
+        updateMessage("Перевірка CSV-файлу...");
         updateProgress(0, 100);
 
         if (!Files.exists(filePath)) {
-            throw new IllegalArgumentException("Файл не знайдено: " + filePath.toAbsolutePath());
+            String err = "CSV-файл не знайдено за шляхом: " + filePath;
+            LOG.severe(err);
+            throw new IllegalArgumentException(err);
         }
 
-        int importedCount = 0;
-        try (BufferedReader reader = Files.newBufferedReader(filePath)) {
-            String line;
-            boolean isHeader = true;
-            int totalLines = (int) Files.lines(filePath).count();
-            int currentLine = 0;
+        List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
+        if (lines.isEmpty()) {
+            String err = "CSV-файл порожній";
+            LOG.severe(err);
+            throw new IllegalArgumentException(err);
+        }
 
-            while ((line = reader.readLine()) != null) {
-                currentLine++;
-                if (isHeader) {
-                    isHeader = false;
-                    continue;
-                }
+        String header = lines.get(0).replace("\uFEFF", "").trim();
+        if (!EXPECTED_HEADER.equalsIgnoreCase(header)) {
+            String err = "Некоректний заголовок CSV. Очікувалося: '" + EXPECTED_HEADER + "', отримано: '" + header + "'";
+            LOG.severe(err);
+            throw new IllegalArgumentException(err);
+        }
 
-                String[] parts = line.split(";");
-                if (parts.length >= 3) {
-                    Room room = new Room();
-                    room.setRoomNumber(parts[0].trim());
-                    room.setCategory(parts[1].trim());
-                    room.setFloor(Integer.parseInt(parts[2].trim()));
+        int total = Math.max(1, lines.size() - 1);
+        int imported = 0;
+        int skipped = 0;
 
-                    client.addRoom(room);
-                    importedCount++;
-                }
-
-                updateProgress(currentLine, totalLines);
-                updateMessage("Імпортовано рядків: " + importedCount);
+        for (int i = 1; i < lines.size(); i++) {
+            String line = lines.get(i).trim();
+            if (line.isEmpty()) {
+                continue;
             }
+
+            String[] parts = line.split(";");
+            if (parts.length != 3) {
+                skipped++;
+                LOG.warning("Пропущено рядок " + (i + 1) + ": очікувалося 3 поля, отримано " + parts.length);
+                updateProgress(i, total);
+                continue;
+            }
+
+            try {
+                String roomNumber = parts[0].trim();
+                String category = parts[1].trim();
+                int floor = Integer.parseInt(parts[2].trim());
+
+                Room room = new Room();
+                room.setRoomNumber(roomNumber);
+                room.setCategory(category);
+                room.setFloor(floor);
+
+                client.addRoom(room);
+                imported++;
+            } catch (NumberFormatException ex) {
+                skipped++;
+                LOG.warning("Пропущено рядок " + (i + 1) + ": некоректне числове значення поверху ('" + parts[2].trim() + "')");
+            } catch (RuntimeException ex) {
+                if (ex.getMessage() != null && ex.getMessage().startsWith("Помилка з'єднання")) {
+                    LOG.log(Level.SEVERE, "Зупинка імпорту через недоступність сервера", ex);
+                    throw ex;
+                }
+                skipped++;
+                LOG.warning("Пропущено рядок " + (i + 1) + ": сервер відхилив запис (" + ex.getMessage() + ")");
+            }
+
+            updateProgress(i, total);
+            updateMessage("Імпортовано: " + imported + " із " + total + (skipped > 0 ? " (пропущено: " + skipped + ")" : ""));
         }
 
-        updateMessage("Готово. Імпортовано: " + importedCount);
-        return importedCount;
+        String summary = "Імпорт завершено. Успішно: " + imported + ", пропущено: " + skipped;
+        LOG.info(summary);
+        updateMessage(summary);
+        return imported;
     }
 }

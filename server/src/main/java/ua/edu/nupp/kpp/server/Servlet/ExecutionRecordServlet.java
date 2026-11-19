@@ -3,44 +3,44 @@ package ua.edu.nupp.kpp.server.Servlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ua.edu.nupp.kpp.server.Models.ExecutionRecord;
 import ua.edu.nupp.kpp.server.Service.ExecutionRecordService;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
-@WebServlet("/execution-records")
 public class ExecutionRecordServlet extends HttpServlet {
     private final ExecutionRecordService service = new ExecutionRecordService();
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json; charset=UTF-8");
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             if ("delete".equals(req.getParameter("action"))) {
                 service.deleteRecord(Long.parseLong(req.getParameter("id")));
-                resp.getWriter().write("{\"status\":\"success\"}");
+                writeJson(resp, Map.of("status", "success"));
                 return;
             }
-            mapper.writeValue(resp.getWriter(), service.getAllRecords());
+            writeJson(resp, service.getAllRecords());
         } catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            Map<String, String> err = new HashMap<>();
-            err.put("error", e.getMessage());
-            mapper.writeValue(resp.getWriter(), err);
+            writeError(resp, e);
         }
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         req.setCharacterEncoding("UTF-8");
-        resp.setContentType("application/json; charset=UTF-8");
         try {
+            if ("delete".equals(req.getParameter("action"))) {
+                service.deleteRecord(Long.parseLong(req.getParameter("id")));
+                writeJson(resp, Map.of("status", "success"));
+                return;
+            }
             String idStr = req.getParameter("id");
+            String reqIdStr = req.getParameter("requestId");
+            if (reqIdStr == null || reqIdStr.isBlank()) {
+                throw new IllegalArgumentException("ID заявки є обов'язковим");
+            }
             ExecutionRecord rec = new ExecutionRecord();
-            rec.setRequestId(Long.parseLong(req.getParameter("requestId")));
+            rec.setRequestId(Long.parseLong(reqIdStr));
             rec.setExecutionDate(req.getParameter("completedDate"));
             rec.setResultNotes(req.getParameter("reportDetails"));
 
@@ -50,12 +50,25 @@ public class ExecutionRecordServlet extends HttpServlet {
             } else {
                 service.addRecord(rec);
             }
-            resp.getWriter().write("{\"status\":\"success\"}");
+            writeJson(resp, Map.of("status", "success"));
         } catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            Map<String, String> err = new HashMap<>();
-            err.put("error", e.getMessage());
-            mapper.writeValue(resp.getWriter(), err);
+            writeError(resp, e);
         }
+    }
+
+    private void writeJson(HttpServletResponse resp, Object data) throws IOException {
+        resp.setContentType("application/json; charset=UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+        mapper.writeValue(resp.getWriter(), data);
+    }
+
+    private void writeError(HttpServletResponse resp, Exception e) throws IOException {
+        boolean clientError = e instanceof IllegalArgumentException;
+        int status = clientError ? HttpServletResponse.SC_BAD_REQUEST : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+        String message = clientError
+                ? (e.getMessage() == null ? "Некоректний запит" : e.getMessage())
+                : "Внутрішня помилка сервера";
+        resp.setStatus(status);
+        writeJson(resp, Map.of("error", message));
     }
 }

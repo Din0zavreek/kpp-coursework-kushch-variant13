@@ -2,8 +2,10 @@ package ua.edu.nupp.kpp.server;
 
 import ua.edu.nupp.kpp.server.Models.Request;
 import ua.edu.nupp.kpp.server.Models.RequestState;
-import ua.edu.nupp.kpp.server.Service.RequestService;
+import ua.edu.nupp.kpp.server.Models.Room;
 import ua.edu.nupp.kpp.server.Service.PriorityCalculator;
+import ua.edu.nupp.kpp.server.Service.RequestService;
+import ua.edu.nupp.kpp.server.Service.RoomService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,32 +23,32 @@ class CourseworkTest {
 
     @Test
     void testPriorityCalculationStandardValues() {
-        double result = priorityCalculator.calculate(80.0, 60.0, 100.0);
+        double result = PriorityCalculator.calculate(80.0, 60.0, 100.0);
         assertEquals(78.0, result, 0.001);
     }
 
     @Test
     void testPriorityCalculationMinimumValues() {
-        double result = priorityCalculator.calculate(0.0, 0.0, 0.0);
+        double result = PriorityCalculator.calculate(0.0, 0.0, 0.0);
         assertEquals(0.0, result, 0.001);
     }
 
     @Test
     void testPriorityCalculationMaximumValues() {
-        double result = priorityCalculator.calculate(100.0, 100.0, 100.0);
+        double result = PriorityCalculator.calculate(100.0, 100.0, 100.0);
         assertEquals(100.0, result, 0.001);
     }
 
     @Test
     void testPriorityCalculationWeightsSum() {
-        double result = priorityCalculator.calculate(50.0, 50.0, 50.0);
+        double result = PriorityCalculator.calculate(50.0, 50.0, 50.0);
         assertEquals(50.0, result, 0.001);
     }
 
     @Test
     void testPriorityCalculationInvalidFactorThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> {
-            priorityCalculator.calculate(150.0, 50.0, 50.0);
+            PriorityCalculator.calculate(150.0, 50.0, 50.0);
         });
     }
 
@@ -85,5 +87,19 @@ class CourseworkTest {
     void testInvalidJumpTransition() {
         boolean valid = requestService.isValidStateTransition(RequestState.НОВА, RequestState.ВИКОНАНО);
         assertFalse(valid);
+    }
+
+    @Test
+    void testRoomValidationEmptyNumberThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            RoomService.validateRoom(new Room(null, "", "Стандарт", 1));
+        });
+    }
+
+    @Test
+    void testRoomValidationInvalidFloorThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            RoomService.validateRoom(new Room(null, "105", "Люкс", 0));
+        });
     }
 }

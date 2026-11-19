@@ -10,8 +10,10 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.nio.file.Path;
+import java.util.logging.Logger;
 
 public class MainApp extends Application {
+    private static final Logger LOG = Logger.getLogger(MainApp.class.getName());
     private final HttpHotelClient client = new HttpHotelClient();
 
     private final ObservableList<Room> roomData = FXCollections.observableArrayList();
@@ -71,11 +73,11 @@ public class MainApp extends Application {
         Button saveButton = new Button("Змінити / Додати");
         Button clearButton = new Button("Очистити форму");
         Button deleteButton = new Button("Видалити вибране");
-        Button importCsvButton = new Button("Імпорт CSV");
+        Button importCsvButton = new Button("Імпортувати CSV");
         Button refreshButton = new Button("Оновити");
 
         ProgressBar progressBar = new ProgressBar(0);
-        Label statusLabel = new Label("Готово");
+        Label statusLabel = new Label("CSV не запущено");
 
         roomTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
@@ -86,39 +88,47 @@ public class MainApp extends Application {
             }
         });
 
-        saveButton.setOnAction(e -> {
-            try {
-                Room r = new Room();
-                if (!idField.getText().isEmpty()) r.setId(Long.parseLong(idField.getText()));
-                r.setRoomNumber(numField.getText());
-                r.setCategory(catField.getText());
-                r.setFloor(Integer.parseInt(floorField.getText()));
-                client.addRoom(r); // Серверний метод обробляє і створення, і оновлення
-                refreshRooms();
-                clearRoomForm(idField, numField, catField, floorField);
-            } catch (Exception ex) { showError(ex.getMessage()); }
-        });
+        saveButton.setOnAction(e -> safe(() -> {
+            Room r = new Room();
+            if (!idField.getText().isEmpty()) r.setId(Long.parseLong(idField.getText()));
+            r.setRoomNumber(numField.getText());
+            r.setCategory(catField.getText());
+            r.setFloor(Integer.parseInt(floorField.getText()));
+            client.addRoom(r);
+            refreshRooms();
+            clearRoomForm(idField, numField, catField, floorField);
+        }));
 
         clearButton.setOnAction(e -> clearRoomForm(idField, numField, catField, floorField));
 
-        deleteButton.setOnAction(e -> {
-            Room selected = roomTable.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                client.deleteRoom(selected.getId());
-                refreshRooms();
-            } else {
-                showError("Оберіть номер для видалення!");
-            }
-        });
+        deleteButton.setOnAction(e -> safe(() -> {
+            Room selected = selected(roomTable);
+            client.deleteRoom(selected.getId());
+            refreshAllData();
+        }));
 
         importCsvButton.setOnAction(e -> {
+            importCsvButton.setDisable(true);
             Path csvPath = Path.of("sample-data", "rooms.csv");
             ImportRoomsTask task = new ImportRoomsTask(csvPath, client);
             progressBar.progressProperty().bind(task.progressProperty());
             statusLabel.textProperty().bind(task.messageProperty());
-            task.setOnSucceeded(ev -> { refreshRooms(); showAlert("Успіх", "Імпорт завершено!"); });
-            task.setOnFailed(ev -> showError(task.getException().getMessage()));
-            new Thread(task).start();
+            task.setOnSucceeded(ev -> {
+                importCsvButton.setDisable(false);
+                progressBar.progressProperty().unbind();
+                statusLabel.textProperty().unbind();
+                statusLabel.setText("Готово. Імпортовано: " + task.getValue());
+                refreshRooms();
+                showAlert("Успіх", "Імпорт завершено! Додано записів: " + task.getValue());
+            });
+            task.setOnFailed(ev -> {
+                importCsvButton.setDisable(false);
+                progressBar.progressProperty().unbind();
+                statusLabel.textProperty().unbind();
+                statusLabel.setText("Помилка імпорту");
+                showError(task.getException() != null ? task.getException().getMessage() : "Помилка імпорту CSV");
+            });
+            new Thread(task, "csv-import").start();
         });
 
         refreshButton.setOnAction(e -> refreshRooms());
@@ -147,10 +157,11 @@ public class MainApp extends Application {
         VBox form = new VBox(10); form.setPadding(new Insets(10));
         TextField idField = new TextField(); idField.setVisible(false); idField.setManaged(false);
         TextField nameField = new TextField(); nameField.setPromptText("ПІБ спеціаліста");
-        TextField specField = new TextField(); specField.setPromptText("Спеціалізація (напр. Сантехнік)");
+        TextField specField = new TextField(); specField.setPromptText("Спеціалізація (напр. Сантехніка)");
         TextField phoneField = new TextField(); phoneField.setPromptText("Телефон");
 
         Button saveButton = new Button("Змінити / Додати");
+        Button clearButton = new Button("Очистити форму");
         Button deleteButton = new Button("Видалити вибране");
         Button refreshButton = new Button("Оновити");
 
@@ -163,33 +174,38 @@ public class MainApp extends Application {
             }
         });
 
-        saveButton.setOnAction(e -> {
-            try {
-                Specialist s = new Specialist();
-                if (!idField.getText().isEmpty()) s.setId(Long.parseLong(idField.getText()));
-                s.setFullName(nameField.getText());
-                s.setSpecialization(specField.getText());
-                s.setPhone(phoneField.getText());
-                client.addSpecialist(s);
-                refreshSpecialists();
-                idField.clear(); nameField.clear(); specField.clear(); phoneField.clear();
-            } catch (Exception ex) { showError(ex.getMessage()); }
-        });
+        saveButton.setOnAction(e -> safe(() -> {
+            Specialist s = new Specialist();
+            if (!idField.getText().isEmpty()) s.setId(Long.parseLong(idField.getText()));
+            s.setFullName(nameField.getText());
+            s.setSpecialization(specField.getText());
+            s.setPhone(phoneField.getText());
+            client.addSpecialist(s);
+            refreshSpecialists();
+            clearSpecialistForm(idField, nameField, specField, phoneField);
+        }));
 
-        deleteButton.setOnAction(e -> {
-            Specialist selected = specialistTable.getSelectionModel().getSelectedItem();
-            if (selected != null) { client.deleteSpecialist(selected.getId()); refreshSpecialists(); }
-            else { showError("Оберіть спеціаліста!"); }
-        });
+        clearButton.setOnAction(e -> clearSpecialistForm(idField, nameField, specField, phoneField));
+
+        deleteButton.setOnAction(e -> safe(() -> {
+            Specialist selected = selected(specialistTable);
+            client.deleteSpecialist(selected.getId());
+            refreshAllData();
+        }));
 
         refreshButton.setOnAction(e -> refreshSpecialists());
 
         form.getChildren().addAll(new Label("Керування спеціалістами"), idField, nameField, specField, phoneField,
-                saveButton, deleteButton, refreshButton);
+                saveButton, clearButton, deleteButton, refreshButton);
 
         SplitPane split = new SplitPane(specialistTable, form);
         split.setDividerPositions(0.65);
         return split;
+    }
+
+    private void clearSpecialistForm(TextField id, TextField name, TextField spec, TextField phone) {
+        id.clear(); name.clear(); spec.clear(); phone.clear();
+        specialistTable.getSelectionModel().clearSelection();
     }
 
     private SplitPane createRequestPane() {
@@ -206,7 +222,7 @@ public class MainApp extends Application {
         VBox form = new VBox(10); form.setPadding(new Insets(10));
         TextField idField = new TextField(); idField.setVisible(false); idField.setManaged(false);
         TextField roomField = new TextField(); roomField.setPromptText("ID Номера");
-        TextField specField = new TextField(); specField.setPromptText("ID Спеціаліста");
+        TextField specField = new TextField(); specField.setPromptText("ID Спеціаліста (необов'язково)");
         TextField descField = new TextField(); descField.setPromptText("Опис проблеми");
 
         ComboBox<String> stateCombo = new ComboBox<>(FXCollections.observableArrayList("НОВА", "ПРИЗНАЧЕНА", "В_РОБОТІ", "ВИКОНАНО"));
@@ -234,61 +250,53 @@ public class MainApp extends Application {
             }
         });
 
-        newButton.setOnAction(e -> {
-            try {
-                Request r = new Request();
-                r.setRoomId(Long.parseLong(roomField.getText()));
-                r.setSpecialistId(!specField.getText().isEmpty() ? Long.parseLong(specField.getText()) : null);
-                r.setDescription(descField.getText());
-                r.setState(stateCombo.getValue() != null ? stateCombo.getValue() : "НОВА");
-                r.setF1(Double.parseDouble(f1Field.getText()));
-                r.setF2(Double.parseDouble(f2Field.getText()));
-                r.setF3(Double.parseDouble(f3Field.getText()));
+        newButton.setOnAction(e -> safe(() -> {
+            Request r = new Request();
+            r.setRoomId(Long.parseLong(roomField.getText()));
+            r.setSpecialistId(!specField.getText().isEmpty() ? Long.parseLong(specField.getText()) : null);
+            r.setDescription(descField.getText());
+            r.setState(stateCombo.getValue() != null ? stateCombo.getValue() : "НОВА");
+            r.setF1(Double.parseDouble(f1Field.getText()));
+            r.setF2(Double.parseDouble(f2Field.getText()));
+            r.setF3(Double.parseDouble(f3Field.getText()));
 
-                client.addRequest(r);
-                refreshRequests();
+            client.addRequest(r);
+            refreshRequests();
 
-                idField.clear();
-                roomField.clear();
-                specField.clear();
-                descField.clear();
-                stateCombo.setValue("НОВА");
-                requestTable.getSelectionModel().clearSelection();
-                showAlert("Успіх", "Нову заявку успішно створено!");
-            } catch (Exception ex) {
-                showError("Помилка створення: " + ex.getMessage());
+            idField.clear();
+            roomField.clear();
+            specField.clear();
+            descField.clear();
+            stateCombo.setValue("НОВА");
+            requestTable.getSelectionModel().clearSelection();
+            showAlert("Успіх", "Нову заявку успішно створено!");
+        }));
+
+        saveButton.setOnAction(e -> safe(() -> {
+            if (idField.getText().isEmpty()) {
+                throw new IllegalArgumentException("Оберіть заявку в таблиці для редагування!");
             }
-        });
 
-        saveButton.setOnAction(e -> {
-            try {
-                if (idField.getText().isEmpty()) {
-                    throw new IllegalArgumentException("Оберіть заявку в таблиці для редагування або натисніть 'Нова' для створення!");
-                }
+            Request r = new Request();
+            r.setId(Long.parseLong(idField.getText()));
+            r.setRoomId(Long.parseLong(roomField.getText()));
+            r.setSpecialistId(!specField.getText().isEmpty() ? Long.parseLong(specField.getText()) : null);
+            r.setDescription(descField.getText());
+            r.setState(stateCombo.getValue());
+            r.setF1(Double.parseDouble(f1Field.getText()));
+            r.setF2(Double.parseDouble(f2Field.getText()));
+            r.setF3(Double.parseDouble(f3Field.getText()));
 
-                Request r = new Request();
-                r.setId(Long.parseLong(idField.getText()));
-                r.setRoomId(Long.parseLong(roomField.getText()));
-                r.setSpecialistId(!specField.getText().isEmpty() ? Long.parseLong(specField.getText()) : null);
-                r.setDescription(descField.getText());
-                r.setState(stateCombo.getValue());
-                r.setF1(Double.parseDouble(f1Field.getText()));
-                r.setF2(Double.parseDouble(f2Field.getText()));
-                r.setF3(Double.parseDouble(f3Field.getText()));
+            client.addRequest(r);
+            refreshRequests();
+            showAlert("Успіх", "Зміни до заявки збережено!");
+        }));
 
-                client.addRequest(r);
-                refreshRequests();
-                showAlert("Успіх", "Зміни до заявки збережено!");
-            } catch (Exception ex) {
-                showError("Помилка редагування: " + ex.getMessage());
-            }
-        });
-
-        deleteButton.setOnAction(e -> {
-            Request selected = requestTable.getSelectionModel().getSelectedItem();
-            if (selected != null) { client.deleteRequest(selected.getId()); refreshRequests(); }
-            else { showError("Оберіть заявку!"); }
-        });
+        deleteButton.setOnAction(e -> safe(() -> {
+            Request selected = selected(requestTable);
+            client.deleteRequest(selected.getId());
+            refreshAllData();
+        }));
 
         refreshButton.setOnAction(e -> refreshRequests());
 
@@ -337,60 +345,48 @@ public class MainApp extends Application {
             }
         });
 
-        newButton.setOnAction(e -> {
-            try {
-                if (reqField.getText().isEmpty()) {
-                    throw new IllegalArgumentException("Введіть ID заявки!");
-                }
-
-                ExecutionRecord rec = new ExecutionRecord();
-                rec.setRequestId(Long.parseLong(reqField.getText()));
-                rec.setExecutionDate(dateField.getText().isEmpty() ? "2026-10-20" : dateField.getText());
-                rec.setResultNotes(notesField.getText());
-
-                client.addExecutionRecord(rec);
-                refreshRecords();
-
-                idField.clear();
-                reqField.clear();
-                dateField.clear();
-                notesField.clear();
-                recordTable.getSelectionModel().clearSelection();
-                showAlert("Успіх", "Новий запис виконання створено!");
-            } catch (Exception ex) {
-                showError("Помилка створення: " + ex.getMessage());
+        newButton.setOnAction(e -> safe(() -> {
+            if (reqField.getText().isEmpty()) {
+                throw new IllegalArgumentException("Введіть ID заявки!");
             }
-        });
 
-        saveButton.setOnAction(e -> {
-            try {
-                if (idField.getText().isEmpty()) {
-                    throw new IllegalArgumentException("Оберіть запис виконання в таблиці для редагування!");
-                }
+            ExecutionRecord rec = new ExecutionRecord();
+            rec.setRequestId(Long.parseLong(reqField.getText()));
+            rec.setExecutionDate(dateField.getText().isEmpty() ? "2026-10-20" : dateField.getText());
+            rec.setResultNotes(notesField.getText());
 
-                ExecutionRecord rec = new ExecutionRecord();
-                rec.setId(Long.parseLong(idField.getText()));
-                rec.setRequestId(Long.parseLong(reqField.getText()));
-                rec.setExecutionDate(dateField.getText());
-                rec.setResultNotes(notesField.getText());
+            client.addExecutionRecord(rec);
+            refreshRecords();
 
-                client.addExecutionRecord(rec);
-                refreshRecords();
-                showAlert("Успіх", "Зміни у виконанні збережено!");
-            } catch (Exception ex) {
-                showError("Помилка редагування: " + ex.getMessage());
+            idField.clear();
+            reqField.clear();
+            dateField.clear();
+            notesField.clear();
+            recordTable.getSelectionModel().clearSelection();
+            showAlert("Успіх", "Новий запис виконання створено!");
+        }));
+
+        saveButton.setOnAction(e -> safe(() -> {
+            if (idField.getText().isEmpty()) {
+                throw new IllegalArgumentException("Оберіть запис виконання в таблиці для редагування!");
             }
-        });
 
-        deleteButton.setOnAction(e -> {
-            ExecutionRecord selected = recordTable.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                client.deleteExecutionRecord(selected.getId());
-                refreshRecords();
-            } else {
-                showError("Оберіть запис для видалення!");
-            }
-        });
+            ExecutionRecord rec = new ExecutionRecord();
+            rec.setId(Long.parseLong(idField.getText()));
+            rec.setRequestId(Long.parseLong(reqField.getText()));
+            rec.setExecutionDate(dateField.getText());
+            rec.setResultNotes(notesField.getText());
+
+            client.addExecutionRecord(rec);
+            refreshRecords();
+            showAlert("Успіх", "Зміни у виконанні збережено!");
+        }));
+
+        deleteButton.setOnAction(e -> safe(() -> {
+            ExecutionRecord selected = selected(recordTable);
+            client.deleteExecutionRecord(selected.getId());
+            refreshRecords();
+        }));
 
         refreshButton.setOnAction(e -> refreshRecords());
 
@@ -410,24 +406,62 @@ public class MainApp extends Application {
     }
 
     private void refreshRooms() {
-        try { roomData.setAll(client.getRooms()); roomTable.setItems(roomData); } catch (Exception e) { }
+        safe(() -> {
+            roomData.setAll(client.getRooms());
+            roomTable.setItems(roomData);
+        });
     }
+
     private void refreshSpecialists() {
-        try { specialistData.setAll(client.getSpecialists()); specialistTable.setItems(specialistData); } catch (Exception e) { }
+        safe(() -> {
+            specialistData.setAll(client.getSpecialists());
+            specialistTable.setItems(specialistData);
+        });
     }
+
     private void refreshRequests() {
-        try { requestData.setAll(client.getRequests()); requestTable.setItems(requestData); } catch (Exception e) { }
+        safe(() -> {
+            requestData.setAll(client.getRequests());
+            requestTable.setItems(requestData);
+        });
     }
+
     private void refreshRecords() {
-        try { recordData.setAll(client.getExecutionRecords()); recordTable.setItems(recordData); } catch (Exception e) { }
+        safe(() -> {
+            recordData.setAll(client.getExecutionRecords());
+            recordTable.setItems(recordData);
+        });
+    }
+
+    private <T> T selected(TableView<T> table) {
+        T v = table.getSelectionModel().getSelectedItem();
+        if (v == null) {
+            throw new IllegalArgumentException("Виберіть запис у таблиці");
+        }
+        return v;
+    }
+
+    private void safe(Runnable action) {
+        try {
+            action.run();
+        } catch (Exception e) {
+            LOG.warning(e.getMessage());
+            showError(e.getMessage());
+        }
     }
 
     private void showError(String msg) {
-        Alert a = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK); a.showAndWait();
-    }
-    private void showAlert(String title, String msg) {
-        Alert a = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK); a.setHeaderText(title); a.showAndWait();
+        Alert a = new Alert(Alert.AlertType.ERROR, msg == null ? "Помилка" : msg, ButtonType.OK);
+        a.showAndWait();
     }
 
-    public static void main(String[] args) { launch(args); }
+    private void showAlert(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
+        a.setHeaderText(title);
+        a.showAndWait();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
 }

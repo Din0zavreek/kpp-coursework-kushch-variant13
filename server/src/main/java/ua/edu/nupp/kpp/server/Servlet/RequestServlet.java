@@ -3,46 +3,47 @@ package ua.edu.nupp.kpp.server.Servlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ua.edu.nupp.kpp.server.Models.Request;
 import ua.edu.nupp.kpp.server.Service.RequestService;
-import ua.edu.nupp.kpp.server.Service.PriorityCalculator;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
-@WebServlet("/requests")
 public class RequestServlet extends HttpServlet {
     private final RequestService service = new RequestService();
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json; charset=UTF-8");
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             if ("delete".equals(req.getParameter("action"))) {
                 service.deleteRequest(Long.parseLong(req.getParameter("id")));
-                resp.getWriter().write("{\"status\":\"success\"}");
+                writeJson(resp, Map.of("status", "success"));
                 return;
             }
-            mapper.writeValue(resp.getWriter(), service.getAllRequests());
+            writeJson(resp, service.getAllRequests());
         } catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            Map<String, String> err = new HashMap<>(); err.put("error", e.getMessage());
-            mapper.writeValue(resp.getWriter(), err);
+            writeError(resp, e);
         }
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.setCharacterEncoding("UTF-8"); resp.setContentType("application/json; charset=UTF-8");
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        req.setCharacterEncoding("UTF-8");
         try {
+            if ("delete".equals(req.getParameter("action"))) {
+                service.deleteRequest(Long.parseLong(req.getParameter("id")));
+                writeJson(resp, Map.of("status", "success"));
+                return;
+            }
             String idStr = req.getParameter("id");
+            String roomStr = req.getParameter("roomId");
+            if (roomStr == null || roomStr.isBlank()) {
+                throw new IllegalArgumentException("ID кімнати є обов'язковим");
+            }
             String specStr = req.getParameter("specialistId");
 
             Request r = new Request();
-            r.setRoomId(Long.parseLong(req.getParameter("roomId")));
-            r.setSpecialistId((specStr != null && !specStr.isEmpty()) ? Long.parseLong(specStr) : null);
+            r.setRoomId(Long.parseLong(roomStr));
+            r.setSpecialistId((specStr != null && !specStr.isEmpty() && !"null".equals(specStr)) ? Long.parseLong(specStr) : null);
             r.setDescription(req.getParameter("description"));
             r.setState(req.getParameter("state"));
 
@@ -52,7 +53,6 @@ public class RequestServlet extends HttpServlet {
             r.setF1(f1);
             r.setF2(f2);
             r.setF3(f3);
-            r.setPriorityIndex(PriorityCalculator.calculate(f1, f2, f3));
 
             if (idStr != null && !idStr.isEmpty() && !"null".equals(idStr)) {
                 r.setId(Long.parseLong(idStr));
@@ -60,11 +60,25 @@ public class RequestServlet extends HttpServlet {
             } else {
                 service.addRequest(r);
             }
-            resp.getWriter().write("{\"status\":\"success\"}");
+            writeJson(resp, Map.of("status", "success"));
         } catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            Map<String, String> err = new HashMap<>(); err.put("error", e.getMessage());
-            mapper.writeValue(resp.getWriter(), err);
+            writeError(resp, e);
         }
+    }
+
+    private void writeJson(HttpServletResponse resp, Object data) throws IOException {
+        resp.setContentType("application/json; charset=UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+        mapper.writeValue(resp.getWriter(), data);
+    }
+
+    private void writeError(HttpServletResponse resp, Exception e) throws IOException {
+        boolean clientError = e instanceof IllegalArgumentException;
+        int status = clientError ? HttpServletResponse.SC_BAD_REQUEST : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+        String message = clientError
+                ? (e.getMessage() == null ? "Некоректний запит" : e.getMessage())
+                : "Внутрішня помилка сервера";
+        resp.setStatus(status);
+        writeJson(resp, Map.of("error", message));
     }
 }

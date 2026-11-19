@@ -7,10 +7,9 @@ public class PriorityCalculator {
 
     public static double calculate(double factor1, double factor2, double factor3) {
         if (factor1 < 0 || factor1 > 100 || factor2 < 0 || factor2 > 100 || factor3 < 0 || factor3 > 100) {
-            throw new IllegalArgumentException("Invalid factor value");
+            throw new IllegalArgumentException("Фактор має бути в діапазоні 0..100");
         }
-
-        return 0.40 * factor1 + 0.35 * factor2 + 0.25 * factor3;
+        return Math.round((0.40 * factor1 + 0.35 * factor2 + 0.25 * factor3) * 100.0) / 100.0;
     }
 
     public double calculateOverallPriority(List<Request> requests) {
@@ -22,6 +21,6 @@ public class PriorityCalculator {
                 .filter(r -> "НОВА".equalsIgnoreCase(r.getState()) || "В_РОБОТІ".equalsIgnoreCase(r.getState()))
                 .count();
 
-        return (double) unresolvedCount / requests.size() * 100.0;
+        return Math.round(((double) unresolvedCount / requests.size() * 100.0) * 100.0) / 100.0;
     }
 }
