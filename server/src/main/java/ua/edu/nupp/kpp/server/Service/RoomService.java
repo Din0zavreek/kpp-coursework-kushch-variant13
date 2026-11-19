@@ -14,10 +14,10 @@ public class RoomService {
     public List<Room> getAllRooms() {
         try {
             List<Room> rooms = roomDAO.getAll();
-            LOGGER.info("Отримано список номерів. Кількість: " + rooms.size());
+            LOGGER.info("Fetched rooms list. Count: " + rooms.size());
             return rooms;
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Помилка отримання списку номерів", e);
+            LOGGER.log(Level.SEVERE, "Database error while fetching rooms", e);
             throw new RuntimeException("Помилка БД при отриманні номерів: " + e.getMessage());
         }
     }
@@ -26,9 +26,9 @@ public class RoomService {
         validateRoom(room);
         try {
             roomDAO.insert(room);
-            LOGGER.info("Додано новий номер: " + room.getRoomNumber() + " (" + room.getCategory() + ")");
+            LOGGER.info("Added new room: " + room.getRoomNumber() + " (floor " + room.getFloor() + ")");
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Помилка додавання номера", e);
+            LOGGER.log(Level.SEVERE, "Database error while adding room", e);
             throw new RuntimeException("Помилка БД при додаванні номера: " + e.getMessage());
         }
     }
@@ -40,9 +40,9 @@ public class RoomService {
         validateRoom(room);
         try {
             roomDAO.update(room);
-            LOGGER.info("Оновлено номер ID=" + room.getId());
+            LOGGER.info("Updated room ID=" + room.getId());
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Помилка оновлення номера ID=" + room.getId(), e);
+            LOGGER.log(Level.SEVERE, "Database error while updating room ID=" + room.getId(), e);
             throw new RuntimeException("Помилка БД при оновленні номера: " + e.getMessage());
         }
     }
@@ -53,9 +53,9 @@ public class RoomService {
         }
         try {
             roomDAO.delete(id);
-            LOGGER.info("Видалено номер ID=" + id);
+            LOGGER.info("Deleted room ID=" + id);
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Помилка видалення номера ID=" + id, e);
+            LOGGER.log(Level.SEVERE, "Database error while deleting room ID=" + id, e);
             throw new RuntimeException("Помилка БД при видаленні номера: " + e.getMessage());
         }
     }

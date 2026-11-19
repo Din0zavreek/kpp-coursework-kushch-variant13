@@ -22,27 +22,27 @@ public class ImportRoomsTask extends Task<Integer> {
 
     @Override
     protected Integer call() throws Exception {
-        LOG.info("Початок фонового імпорту номерів із файла: " + filePath);
+        LOG.info("Starting background CSV import from file: " + filePath);
         updateMessage("Перевірка CSV-файлу...");
         updateProgress(0, 100);
 
         if (!Files.exists(filePath)) {
             String err = "CSV-файл не знайдено за шляхом: " + filePath;
-            LOG.severe(err);
+            LOG.severe("CSV file not found: " + filePath);
             throw new IllegalArgumentException(err);
         }
 
         List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
         if (lines.isEmpty()) {
             String err = "CSV-файл порожній";
-            LOG.severe(err);
+            LOG.severe("CSV file is empty");
             throw new IllegalArgumentException(err);
         }
 
         String header = lines.get(0).replace("\uFEFF", "").trim();
         if (!EXPECTED_HEADER.equalsIgnoreCase(header)) {
             String err = "Некоректний заголовок CSV. Очікувалося: '" + EXPECTED_HEADER + "', отримано: '" + header + "'";
-            LOG.severe(err);
+            LOG.severe("Invalid CSV header: expected '" + EXPECTED_HEADER + "', got '" + header + "'");
             throw new IllegalArgumentException(err);
         }
 
@@ -59,7 +59,7 @@ public class ImportRoomsTask extends Task<Integer> {
             String[] parts = line.split(";");
             if (parts.length != 3) {
                 skipped++;
-                LOG.warning("Пропущено рядок " + (i + 1) + ": очікувалося 3 поля, отримано " + parts.length);
+                LOG.warning("Skipped line " + (i + 1) + ": expected 3 columns, got " + parts.length);
                 updateProgress(i, total);
                 continue;
             }
@@ -78,23 +78,22 @@ public class ImportRoomsTask extends Task<Integer> {
                 imported++;
             } catch (NumberFormatException ex) {
                 skipped++;
-                LOG.warning("Пропущено рядок " + (i + 1) + ": некоректне числове значення поверху ('" + parts[2].trim() + "')");
+                LOG.warning("Skipped line " + (i + 1) + ": invalid floor number ('" + parts[2].trim() + "')");
             } catch (RuntimeException ex) {
                 if (ex.getMessage() != null && ex.getMessage().startsWith("Помилка з'єднання")) {
-                    LOG.log(Level.SEVERE, "Зупинка імпорту через недоступність сервера", ex);
+                    LOG.log(Level.SEVERE, "Import aborted due to server connection error", ex);
                     throw ex;
                 }
                 skipped++;
-                LOG.warning("Пропущено рядок " + (i + 1) + ": сервер відхилив запис (" + ex.getMessage() + ")");
+                LOG.warning("Skipped line " + (i + 1) + ": rejected by server");
             }
 
             updateProgress(i, total);
             updateMessage("Імпортовано: " + imported + " із " + total + (skipped > 0 ? " (пропущено: " + skipped + ")" : ""));
         }
 
-        String summary = "Імпорт завершено. Успішно: " + imported + ", пропущено: " + skipped;
-        LOG.info(summary);
-        updateMessage(summary);
+        LOG.info("CSV import finished. Imported: " + imported + ", skipped: " + skipped);
+        updateMessage("Імпорт завершено. Успішно: " + imported + ", пропущено: " + skipped);
         return imported;
     }
 }
